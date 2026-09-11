@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GA4 埋設練習台 — 遠端啟動</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&family=Noto+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --primary:#004098;--text-heading:#111827;--text:#1e2a3a;--text-2:#6b7280;--text-3:#9ca3af;
+  --surface:#fff;--bg:#f7f8fa;--bg-subtle:#f9fafb;--bg-muted:#f3f4f6;
+  --border:#e5e7eb;--border-light:rgba(0,0,0,.06);
+  --success:#257a47;--success-bg:#eaf5ee;--warning:#a07010;--warning-bg:#faf3dc;
+  --danger:#dc2626;--danger-bg:#fef2f2;--info:#004098;--info-bg:#eff6ff;
+  --blue:#2b5fa8;--blue-light:#eef3fa;--blue-dark:#1e4276;
+  --radius:8px;--radius-lg:16px;--shadow1:0 1px 2px rgba(0,0,0,.04);--shadow3:0 12px 32px rgba(0,0,0,.16);
+  --log-bg:#0e1620;--log-text:#d8e1ee;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --primary:#7fa9e8;--text-heading:#f3f6fa;--text:#dde4ed;--text-2:#9aa7b8;--text-3:#71808f;
+  --surface:#161e29;--bg:#0f151d;--bg-subtle:#131b25;--bg-muted:#1d2735;
+  --border:#293445;--border-light:rgba(255,255,255,.07);
+  --success:#6cc48d;--success-bg:#14251b;--warning:#e0b352;--warning-bg:#2a2213;
+  --danger:#f08a8a;--danger-bg:#2b1618;--info:#7fa9e8;--info-bg:#16233a;
+  --blue:#82a9df;--blue-light:#182437;--blue-dark:#b3caea;
+  --shadow1:0 1px 2px rgba(0,0,0,.4);--shadow3:0 12px 32px rgba(0,0,0,.6);
+  --log-bg:#0a0f16;--log-text:#cfd9e8;
+}}
+body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--text);line-height:1.7;-webkit-font-smoothing:antialiased}
+.wrap{max-width:80rem;margin:0 auto;padding-inline:20px;padding-block:0 64px}
+header.top{padding-block:30px 18px;border-bottom:1px solid var(--border)}
+.eyebrow{font-size:.6875rem;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text-3);margin-bottom:8px}
+h1{font-size:1.5rem;font-weight:700;letter-spacing:-.025em;line-height:1.25;color:var(--text-heading)}
+.lede{margin-top:9px;color:var(--text-2);font-size:.9375rem;max-width:48rem}
+h2{font-size:1rem;font-weight:600;letter-spacing:-.2px;color:var(--text-heading)}
+h3{font-size:.875rem;font-weight:600;color:var(--text-heading);margin-bottom:10px}
+p{font-size:.9375rem}
+
+.setup{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px 22px;margin-top:22px}
+.setup-row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-top:12px}
+.field{flex:1 1 240px;min-width:0}
+label{display:block;font-size:.8125rem;font-weight:600;margin-bottom:5px;color:var(--text)}
+input[type=text]{width:100%;min-height:44px;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius);
+  background:var(--surface);color:var(--text);font-size:.875rem;font-family:'Noto Sans Mono',monospace;outline:none;transition:border-color .15s,box-shadow .15s}
+input[type=text]:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(43,95,168,.15)}
+.btn{min-height:44px;padding:0 18px;border:1px solid transparent;border-radius:var(--radius);
+  font-family:inherit;font-size:.875rem;font-weight:600;cursor:pointer;transition:all .15s ease;white-space:nowrap}
+.btn-primary{background:var(--blue);color:#fff}.btn-primary:hover{background:var(--blue-dark)}
+.btn-ghost{background:var(--surface);border-color:var(--border);color:var(--text-2)}
+.btn-ghost:hover{border-color:var(--blue);color:var(--blue)}
+.btn-sm{min-height:34px;padding:0 12px;font-size:.8125rem}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn:focus-visible,.chip:focus-visible,.mch:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.hint{font-size:.8125rem;color:var(--text-2);margin-top:9px;line-height:1.6}
+.status{display:inline-flex;align-items:center;gap:7px;font-size:.8125rem;font-weight:600;padding:5px 12px;border-radius:20px;margin-top:12px}
+.status .dot{width:7px;height:7px;border-radius:50%;flex:0 0 auto}
+.st-sim{background:var(--bg-muted);color:var(--text-2)}.st-sim .dot{background:var(--text-3)}
+.st-live{background:var(--success-bg);color:var(--success)}.st-live .dot{background:var(--success)}
+
+.stage{display:grid;grid-template-columns:1.1fr 1fr;gap:20px;margin-top:24px;align-items:start}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px 22px}
+.panel-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+.mock-tag{font-size:.6875rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+  background:var(--warning-bg);color:var(--warning);padding:3px 8px;border-radius:5px}
+.subhead{font-size:.6875rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-3);margin:20px 0 9px}
+.subhead:first-of-type{margin-top:0}
+
+.storebar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.storebar .lbl{font-size:.8125rem;color:var(--text-2);margin-right:2px}
+.machines{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:10px}
+.mch{border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-subtle);padding:12px 13px;text-align:left;font-family:inherit;width:100%}
+.mch-id{font-size:.875rem;font-weight:600;color:var(--text-heading);display:block}
+.mch-code{font-family:'Noto Sans Mono',monospace;font-size:.6875rem;color:var(--text-3);display:block;margin-top:2px;word-break:break-all}
+.mch-meta{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.pill{font-size:.6875rem;font-weight:600;padding:1px 7px;border-radius:20px}
+.p-hwd{background:var(--info-bg);color:var(--info)}
+.p-hcd{background:var(--bg-muted);color:var(--text-2)}
+.p-ozone{background:var(--warning-bg);color:var(--warning)}
+.p-add{background:var(--success-bg);color:var(--success)}
+.mch .btn{margin-top:11px;width:100%}
+
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.on{display:flex}
+.modal{background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--shadow3);width:100%;max-width:40rem;max-height:88vh;overflow-y:auto;padding:24px}
+.modal-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:4px}
+.modal-sub{font-size:.8125rem;color:var(--text-2);margin-bottom:18px}
+
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--border);background:var(--surface);color:var(--text);padding:8px 14px;min-height:44px;
+  border-radius:22px;cursor:pointer;font-family:inherit;font-size:.875rem;font-weight:500;transition:all .15s ease;
+  display:inline-flex;align-items:center;gap:7px}
+.chip:hover:not(:disabled){border-color:var(--blue);color:var(--blue)}
+.chip[aria-pressed="true"]{background:var(--blue);border-color:var(--blue);color:#fff}
+.chip:disabled{opacity:.35;cursor:not-allowed}
+.chip .code{font-family:'Noto Sans Mono',monospace;font-size:.6875rem;opacity:.7}
+.chip.sq{border-radius:var(--radius)}
+
+.custom-box{margin-top:18px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-subtle);padding:16px}
+.opts{display:flex;flex-direction:column;gap:9px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}
+.opt{display:flex;align-items:flex-start;gap:9px;font-size:.875rem;cursor:pointer}
+.opt input{margin-top:5px;width:16px;height:16px;flex:0 0 auto;accent-color:var(--blue)}
+.opt .d{font-size:.75rem;color:var(--text-2);display:block;line-height:1.5}
+.combo-preview{font-family:'Noto Sans Mono',monospace;font-size:.75rem;background:var(--surface);border:1px solid var(--border);
+  border-radius:6px;padding:10px 12px;margin-top:14px;color:var(--blue-dark);word-break:break-all;line-height:1.7}
+.combo-preview .empty{color:var(--text-3);font-family:'Noto Sans TC',sans-serif}
+.combo-preview .om{color:var(--warning);font-family:'Noto Sans TC',sans-serif;font-size:.75rem}
+
+.apibar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:18px;padding-top:16px;border-top:1px solid var(--border)}
+.apibar .lbl{font-size:.8125rem;font-weight:600}
+.modal-foot{display:flex;gap:9px;justify-content:flex-end;margin-top:18px;flex-wrap:wrap}
+
+.log{background:var(--log-bg);border-radius:var(--radius);padding:13px;max-height:36rem;overflow-y:auto;
+  font-family:'Noto Sans Mono',monospace;font-size:.75rem;line-height:1.7;color:var(--log-text)}
+.log-empty{color:#66768c;text-align:center;padding:36px 12px;font-family:'Noto Sans TC',sans-serif;font-size:.8125rem}
+.entry{border-left:2px solid #3d72bf;padding:8px 0 8px 11px;margin-bottom:11px}
+.entry.blocked{border-left-color:#66768c;opacity:.72}
+.entry-top{display:flex;justify-content:space-between;gap:10px;margin-bottom:4px;align-items:baseline}
+.entry-name{color:#8ec0f2;font-weight:500;word-break:break-all}
+.entry.blocked .entry-name{color:#8fa3bd}
+.entry-time{color:#66768c;font-size:.6875rem;flex:0 0 auto}
+.kv{display:flex;gap:7px}.kv .k{color:#8fa3bd;flex:0 0 auto}.kv .v{color:#9bd6a8;word-break:break-all}.kv .v.num{color:#e0b352}
+.entry-note{color:#c9a45c;font-size:.6875rem;margin-top:5px;font-family:'Noto Sans TC',sans-serif;line-height:1.6}
+.counter{font-size:.8125rem;color:var(--text-2);font-variant-numeric:tabular-nums}
+
+.alert{padding:13px 15px;border-radius:var(--radius);font-size:.875rem;margin-top:16px;line-height:1.7}
+.alert-title{font-weight:600;display:block;margin-bottom:3px}
+.alert-info{background:var(--info-bg);border-left:3px solid var(--blue)}.alert-info .alert-title{color:var(--info)}
+.alert-warning{background:var(--warning-bg);border-left:3px solid var(--warning)}.alert-warning .alert-title{color:var(--warning)}
+
+.plist{list-style:none;padding:6px 0;border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--surface);margin-top:12px}
+.plist li{display:flex;gap:11px;align-items:flex-start;padding:11px 18px;border-bottom:1px solid var(--border-light);font-size:.875rem;line-height:1.65}
+.plist li:last-child{border-bottom:none}
+.plist .num{flex:0 0 auto;min-width:24px;height:22px;padding:0 5px;border-radius:11px;background:var(--bg-muted);color:var(--text-2);
+  font-size:.6875rem;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:4px}
+.plist .num.neg{background:var(--danger-bg);color:var(--danger)}
+.plist .num.key{background:var(--warning-bg);color:var(--warning)}
+code{font-family:'Noto Sans Mono',monospace;font-size:.8125em;background:var(--bg-muted);padding:1px 5px;border-radius:4px;color:var(--blue-dark)}
+.sec{margin-top:34px}
+@media (max-width:900px){.stage{grid-template-columns:1fr}}
+@media (max-width:639px){.wrap{padding-inline:16px}h1{font-size:1.25rem}.panel,.modal{padding:16px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <div class="eyebrow">artemis 店長系統 · 需求 4-1 / 4-2</div>
+  <h1>GA4 埋設練習台 — 遠端啟動</h1>
+  <p class="lede">對齊需求表 v4 的最終規格。這是設備管理頁與遠端啟動彈窗的模擬，埋的事件、參數名、觸發時機都與交付給 RD 的規格一致。不會動到 artemis，也不需要 RD。</p>
+</header>
+
+<section class="setup">
+  <h2>接上你的測試資源</h2>
+  <p class="hint">不填也能用（模擬模式：只在右邊顯示會送出什麼）。要練 DebugView，先在 GA4 後台開一個測試用資源，把評估 ID 貼進來。</p>
+  <div class="setup-row">
+    <div class="field">
+      <label for="mid">GA4 評估 ID</label>
+      <input type="text" id="mid" placeholder="G-XXXXXXXXXX" autocomplete="off" spellcheck="false">
+    </div>
+    <button class="btn btn-primary" id="connect" type="button">連線並開啟 debug_mode</button>
+    <button class="btn btn-ghost" id="disconnect" type="button">改用模擬模式</button>
+  </div>
+  <span class="status st-sim" id="status"><span class="dot"></span>模擬模式 — 事件只顯示在右邊，不會送到 GA4</span>
+</section>
+
+<div class="stage">
+  <section class="panel">
+    <div class="panel-head">
+      <h2>設備管理頁</h2><span class="mock-tag">模擬畫面</span>
+    </div>
+
+    <div class="subhead">目前店家（切換可驗 store_id 是事件參數）</div>
+    <div class="storebar" id="storebar"></div>
+
+    <div class="subhead">行程名稱設定（改名後 program_type 應該不變）</div>
+    <div class="setup-row" style="margin-top:0">
+      <div class="field">
+        <label for="rename">行程1 的顯示名稱</label>
+        <input type="text" id="rename" value="行程1" autocomplete="off">
+      </div>
+      <button class="btn btn-ghost btn-sm" id="renameBtn" type="button" style="min-height:44px">套用</button>
+    </div>
+
+    <div class="subhead">機台清單</div>
+    <div class="machines" id="machines"></div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <h2>事件記錄</h2>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="counter" id="counter">0 筆</span>
+        <button class="btn btn-ghost btn-sm" id="copyLog" type="button">複製</button>
+        <button class="btn btn-ghost btn-sm" id="clearLog" type="button">清空</button>
+      </div>
+    </div>
+    <div class="log" id="log">
+      <div class="log-empty">在左邊操作，這裡會即時顯示送出的事件與參數。<br>接上測試資源後，這裡的內容應該與 DebugView 完全一致。</div>
+    </div>
+    <div class="alert alert-info">
+      <span class="alert-title">這一欄就是你的對照答案</span>
+      這裡顯示的內容就是 RD 照需求表實作出來應該有的樣子。到 DebugView 比對時，兩邊必須完全一樣。
+    </div>
+  </section>
+</div>
+
+<!-- ── 遠端啟動彈窗 ── -->
+<div class="modal-overlay" id="overlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <h2 id="modalTitle">遠端啟動</h2>
+        <div class="modal-sub" id="modalSub"></div>
+      </div>
+      <button class="btn btn-ghost btn-sm" id="closeModal" type="button">關閉</button>
+    </div>
+
+    <h3>選擇行程</h3>
+    <div class="chips" id="programs"></div>
+
+    <div class="custom-box" id="customBox" hidden>
+      <h3>自訂行程</h3>
+      <p class="hint" style="margin-top:0;margin-bottom:12px">
+        隨便用什麼順序勾都可以，下面的組合字串永遠照固定順序排。臭氧機的第三次洗清畫面文字會變，但代碼一律 <code>rinse3</code>。
+      </p>
+      <div class="chips" id="steps"></div>
+
+      <div class="opts">
+        <label class="opt">
+          <input type="checkbox" id="optAddDry">
+          <span>加烘
+            <span class="d">不是洗程步驟，不進 combo，另以 custom_adddry_enabled 記錄</span>
+          </span>
+        </label>
+        <label class="opt">
+          <input type="checkbox" id="optDryTemp">
+          <span>自訂烘乾溫度
+            <span class="d">只記有沒有勾，不記幾度。只有在有跑烘乾或有加烘時才送出這個參數</span>
+          </span>
+        </label>
+      </div>
+
+      <div class="combo-preview" id="combo"><span class="empty">尚未勾選任何步驟</span></div>
+    </div>
+
+    <div class="apibar">
+      <span class="lbl">模擬後端回應</span>
+      <button class="chip sq" id="apiOk" type="button" aria-pressed="true">成功 (200)</button>
+      <button class="chip sq" id="apiFail" type="button" aria-pressed="false">失敗</button>
+    </div>
+
+    <div class="modal-foot">
+      <button class="btn btn-ghost" id="cancelBtn" type="button">取消</button>
+      <button class="btn btn-primary" id="startBtn" type="button" disabled>啟動</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── 練習流程 ── -->
+<section class="sec">
+  <h2>練習流程</h2>
+  <p class="hint">對應需求表「驗收紀錄」分頁。標紅的是反向驗證，標黃的是最容易靜默出錯的地方。</p>
+  <ol class="plist">
+    <li><span class="num">1</span><div>GA4 後台 → 管理 → 建立 → 資源，開一個測試資源，資料串流選「網站」，拿到 <code>G-</code> 開頭的評估 ID 貼到上面。</div></li>
+    <li><span class="num">2</span><div>另開分頁進 <strong>管理 → 資料顯示 → DebugView</strong>，讓它開著。</div></li>
+    <li><span class="num">3</span><div>對 1號洗脫烘按「遠端啟動」，選行程1，後端設成成功，按啟動。DebugView 比對 <code>program_start</code> 的五個參數。</div></li>
+    <li><span class="num">4</span><div>依序測行程2、3、4、清水清潔、消泡處理。</div></li>
+    <li><span class="num key">5</span><div>把「行程1 的顯示名稱」改成「厚被專用」套用，再啟動一次。<code>program_type</code> 必須仍是 <code>program_1</code>——取畫面文字的話，每家店改過名字就各自長出新維度值，4-1 的分布會散掉。</div></li>
+    <li><span class="num">6</span><div>對 5號洗脫烘（標「可加烘」）選頂層的「加烘」行程啟動，<code>program_type=adddry</code>。其他機台這顆是 disabled。</div></li>
+    <li><span class="num neg">7</span><div><strong>反向：</strong>選了行程但直接關閉彈窗 → 不該有事件。把後端切成「失敗」再啟動 → 也不該有事件。</div></li>
+    <li><span class="num neg">8</span><div><strong>反向：</strong>對 2號烘衣機（HCD）按遠端啟動並啟動 → 不該出現 <code>program_start</code>。</div></li>
+    <li><span class="num">9</span><div>選「自訂行程」，勾脫水＋烘乾，執行。應出現<strong>兩筆</strong>：<code>program_start</code>（program_type=custom）與 <code>custom_program_start</code>。</div></li>
+    <li><span class="num key">10</span><div>換不同勾選順序勾出同一組，<code>custom_program_combo</code> 必須完全相同。這條不過，4-2 的組合佔比全錯。</div></li>
+    <li><span class="num">11</span><div>勾滿 8 個步驟，combo 應為 <code>wash1_wash2_rinse1_rinse2_rinse3_rinse4_spin_dry</code>（48 字元）。</div></li>
+    <li><span class="num key">12</span><div>切到 3號洗脫烘（標「臭氧」），勾出跟第 9 步一樣的步驟。combo 必須一模一樣，只有 <code>machine_has_ozone</code> 變 <code>true</code>。</div></li>
+    <li><span class="num">13</span><div><strong>加烘四格：</strong>勾烘乾後，把「加烘」「自訂烘乾溫度」四種組合各跑一次，比對兩個布林。</div></li>
+    <li><span class="num key">14</span><div>勾「加烘」後看 combo——<strong>不可以出現 <code>adddry</code></strong>。加烘是設定不是步驟。</div></li>
+    <li><span class="num key">15</span><div>不勾烘乾、只勾加烘＋自訂溫度。<code>custom_dry_temp_enabled</code> <strong>仍然必須送出</strong>（PM 決議：加烘也是烘）。</div></li>
+    <li><span class="num key">16</span><div>只勾脫水（不含烘乾、不勾加烘）。<code>custom_dry_temp_enabled</code> 這個 key 應該<strong>整個消失</strong>，不是 <code>false</code>。送 false 會把「根本沒烘」併進「有烘但用預設溫度」，比例靜默算錯。</div></li>
+    <li><span class="num neg">17</span><div><strong>反向：</strong>不勾任何步驟按執行 → 不該有事件。</div></li>
+    <li><span class="num">18</span><div>切換到另一家店，重複第 9 步，<code>store_id</code> / <code>store_alias</code> 應變成新店的值。</div></li>
+    <li><span class="num">19</span><div>到 <strong>管理 → 自訂定義</strong>，把八個參數建成自訂維度：<code>program_type</code>、<code>custom_program_combo</code>、<code>custom_dry_temp_enabled</code>、<code>custom_adddry_enabled</code>、<code>machine_has_ozone</code>、<code>store_id</code>、<code>store_alias</code>、<code>machine_id</code>。</div></li>
+    <li><span class="num">20</span><div><strong>隔天</strong>回來看報表找不找得到這些維度。這一步會讓你體感到 24–48 小時的延遲，排上線時程時要留這段。</div></li>
+  </ol>
+
+  <div class="alert alert-warning">
+    <span class="alert-title">如果 DebugView 一直沒東西</span>
+    確認狀態列是綠色的、DebugView 開的是同一個測試資源、關掉廣告攔截器與追蹤保護、切切看左上角的「偵錯裝置」選單。都排除了還是沒有，把這個檔案放到能用網址開啟的位置再試——部分瀏覽器對直接開啟本機檔案有較嚴的限制。
+  </div>
+</section>
+
+</div>
+
+<script>
+// ── 資料：與需求表 v4 的「代碼對照」一致 ────────────────────
+var STORES=[
+  {id:'uy_2f_stage',alias:'上洋二樓 stage 環境'},
+  {id:'uy_3f_stage',alias:'上洋三樓 stage 環境'}
+];
+var MACHINES=[
+  {name:'1號洗脫烘',id:'aql7277gcot_a001',type:'HWD',ozone:false,canAddDry:false},
+  {name:'3號洗脫烘',id:'aql7277gcot_a002',type:'HWD',ozone:true, canAddDry:false},
+  {name:'5號洗脫烘',id:'aql7277gcot_a003',type:'HWD',ozone:false,canAddDry:true },
+  {name:'2號烘衣機',id:'hcd7277_d001',   type:'HCD',ozone:false,canAddDry:false}
+];
+var PROGRAMS=[
+  {zh:'行程1',code:'program_1',renamable:true},
+  {zh:'行程2',code:'program_2'},
+  {zh:'行程3',code:'program_3'},
+  {zh:'行程4',code:'program_4'},
+  {zh:'加烘',code:'adddry',needAddDry:true},
+  {zh:'自訂行程',code:'custom'},
+  {zh:'清水清潔',code:'water_clean'},
+  {zh:'消泡處理',code:'defoam'}
+];
+// 八個步驟，串接順序即 order
+var STEPS=[
+  {zh:'第一次洗衣',code:'wash1',order:1},
+  {zh:'第二次洗衣',code:'wash2',order:2},
+  {zh:'第一次洗清',code:'rinse1',order:3},
+  {zh:'第二次洗清',code:'rinse2',order:4},
+  {zh:'第三次洗清',code:'rinse3',order:5,ozoneZh:'第三次洗清(臭氧)'},
+  {zh:'第四次洗清',code:'rinse4',order:6},
+  {zh:'脫水',code:'spin',order:7},
+  {zh:'烘乾',code:'dry',order:8}
+];
+
+// ── 狀態 ─────────────────────────────────────────────────
+var live=false, store=STORES[0], machine=null, program=null;
+var picked={}, apiOk=true, logCount=0, logLines=[];
+var program1Label='行程1';
+var $=function(id){return document.getElementById(id);};
+
+// ── GA4 ──────────────────────────────────────────────────
+function initGA(id){
+  window.dataLayer=window.dataLayer||[];
+  window.gtag=function(){window.dataLayer.push(arguments);};
+  var s=document.createElement('script');
+  s.async=true; s.src='https://www.googletagmanager.com/gtag/js?id='+encodeURIComponent(id);
+  document.head.appendChild(s);
+  window.gtag('js',new Date());
+  window.gtag('config',id,{debug_mode:true});
+}
+$('connect').addEventListener('click',function(){
+  var id=$('mid').value.trim();
+  if(!/^G-[A-Za-z0-9]+$/.test(id)){$('mid').focus();setStatus(false,'評估 ID 格式看起來不對，應該是 G- 開頭');return;}
+  initGA(id); live=true; setStatus(true,'已連線 '+id+' — 事件會實際送出，debug_mode 已開啟');
+});
+$('disconnect').addEventListener('click',function(){live=false;setStatus(false,'模擬模式 — 事件只顯示在右邊，不會送到 GA4');});
+function setStatus(on,text){var el=$('status');el.className='status '+(on?'st-live':'st-sim');el.innerHTML='<span class="dot"></span>'+text;}
+
+// ── 送出 / 記錄 ──────────────────────────────────────────
+function sendEvent(name,params,note){
+  if(live&&typeof window.gtag==='function'){window.gtag('event',name,params);}
+  addLog(name,params,false,note||(live?null:'模擬模式：未實際送出'));
+}
+function blockEvent(name,reason){addLog(name,null,true,reason);}
+function addLog(name,params,blocked,note){
+  var log=$('log'); if(logCount===0){log.innerHTML='';}
+  logCount++;
+  var t=new Date();
+  var time=String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0')+':'+String(t.getSeconds()).padStart(2,'0');
+  var div=document.createElement('div');
+  div.className='entry'+(blocked?' blocked':'');
+  var top=document.createElement('div'); top.className='entry-top';
+  var nm=document.createElement('span'); nm.className='entry-name'; nm.textContent=(blocked?'✕ ':'')+name;
+  var tm=document.createElement('span'); tm.className='entry-time'; tm.textContent=time;
+  top.appendChild(nm); top.appendChild(tm); div.appendChild(top);
+  var plain=[time+'  '+(blocked?'[已擋下] ':'')+name];
+  if(params){
+    Object.keys(params).forEach(function(k){
+      var row=document.createElement('div'); row.className='kv';
+      var kk=document.createElement('span'); kk.className='k'; kk.textContent=k+':';
+      var vv=document.createElement('span');
+      vv.className='v'+(typeof params[k]==='number'?' num':'');
+      vv.textContent=typeof params[k]==='number'?params[k]:'"'+params[k]+'"';
+      row.appendChild(kk); row.appendChild(vv); div.appendChild(row);
+      plain.push('    '+k+' = '+params[k]+(typeof params[k]==='number'?'  (number)':''));
+    });
+  }
+  if(note){
+    var n=document.createElement('div'); n.className='entry-note'; n.textContent=note;
+    div.appendChild(n); plain.push('    → '+note);
+  }
+  log.insertBefore(div,log.firstChild);
+  logLines.unshift(plain.join('\n'));
+  $('counter').textContent=logCount+' 筆';
+}
+$('clearLog').addEventListener('click',function(){
+  logCount=0; logLines=[];
+  $('log').innerHTML='<div class="log-empty">在左邊操作，這裡會即時顯示送出的事件與參數。<br>接上測試資源後，這裡的內容應該與 DebugView 完全一致。</div>';
+  $('counter').textContent='0 筆';
+});
+$('copyLog').addEventListener('click',function(){
+  var btn=this, text=logLines.join('\n\n'); if(!text){return;}
+  var done=function(){btn.textContent='已複製';setTimeout(function(){btn.textContent='複製';},1400);};
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(done,function(){fallbackCopy(text,done);});
+  } else {fallbackCopy(text,done);}
+});
+function fallbackCopy(text,done){
+  var ta=document.createElement('textarea'); ta.value=text; ta.style.position='fixed'; ta.style.opacity='0';
+  document.body.appendChild(ta); ta.select();
+  try{document.execCommand('copy');done();}catch(e){}
+  document.body.removeChild(ta);
+}
+
+// ── 店家 ─────────────────────────────────────────────────
+(function(){
+  var bar=$('storebar');
+  var lbl=document.createElement('span'); lbl.className='lbl'; lbl.textContent='目前店家：'; bar.appendChild(lbl);
+  STORES.forEach(function(s,i){
+    var b=document.createElement('button');
+    b.type='button'; b.className='chip sq'; b.setAttribute('aria-pressed',i===0?'true':'false');
+    b.innerHTML=s.alias+'<span class="code">'+s.id+'</span>';
+    b.addEventListener('click',function(){
+      store=s;
+      Array.prototype.forEach.call(bar.querySelectorAll('.chip'),function(c){c.setAttribute('aria-pressed','false');});
+      b.setAttribute('aria-pressed','true');
+    });
+    bar.appendChild(b);
+  });
+})();
+
+// ── 行程改名 ─────────────────────────────────────────────
+$('renameBtn').addEventListener('click',function(){
+  program1Label=$('rename').value.trim()||'行程1';
+  renderPrograms();
+});
+
+// ── 機台 ─────────────────────────────────────────────────
+(function(){
+  var box=$('machines');
+  MACHINES.forEach(function(m){
+    var d=document.createElement('div'); d.className='mch';
+    var pills='<span class="pill p-'+(m.type==='HWD'?'hwd':'hcd')+'">'+m.type+'</span>';
+    if(m.ozone){pills+='<span class="pill p-ozone">臭氧</span>';}
+    if(m.canAddDry){pills+='<span class="pill p-add">可加烘</span>';}
+    d.innerHTML='<span class="mch-id">'+m.name+'</span><span class="mch-code">'+m.id+'</span>'+
+      '<div class="mch-meta">'+pills+'</div>';
+    var b=document.createElement('button');
+    b.type='button'; b.className='btn btn-ghost btn-sm'; b.textContent='遠端啟動';
+    b.addEventListener('click',function(){openModal(m);});
+    d.appendChild(b); box.appendChild(d);
+  });
+})();
+
+// ── 彈窗 ─────────────────────────────────────────────────
+function openModal(m){
+  machine=m; program=null; picked={};
+  $('optAddDry').checked=false; $('optDryTemp').checked=false;
+  $('customBox').hidden=true; $('startBtn').disabled=true; $('startBtn').textContent='啟動';
+  $('modalSub').textContent=m.name+'（'+m.id+'）· '+m.type+(m.ozone?' · 臭氧機':'')+
+    ' ｜ 目前店家：'+store.alias;
+  renderPrograms(); renderSteps(); updateCombo();
+  $('overlay').classList.add('on');
+}
+function closeModal(silent){
+  $('overlay').classList.remove('on');
+  if(!silent&&program){
+    blockEvent('program_start','彈窗關閉、未成功啟動 → 不送出（觸發時機＝啟動成功後）');
+  }
+  machine=null; program=null;
+}
+$('closeModal').addEventListener('click',function(){closeModal(false);});
+$('cancelBtn').addEventListener('click',function(){closeModal(false);});
+$('overlay').addEventListener('click',function(e){if(e.target===$('overlay')){closeModal(false);}});
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&&$('overlay').classList.contains('on')){closeModal(false);}});
+
+function renderPrograms(){
+  var box=$('programs'); box.innerHTML='';
+  PROGRAMS.forEach(function(p){
+    var b=document.createElement('button');
+    b.type='button'; b.className='chip'; b.setAttribute('aria-pressed',program&&program.code===p.code?'true':'false');
+    var zh=p.renamable?program1Label:p.zh;
+    b.innerHTML=zh+'<span class="code">'+p.code+'</span>';
+    if(p.needAddDry&&machine&&!machine.canAddDry){
+      b.disabled=true; b.title='此機台目前不可加烘（disabled）';
+    }
+    b.addEventListener('click',function(){
+      program=p;
+      Array.prototype.forEach.call(box.children,function(c){c.setAttribute('aria-pressed','false');});
+      b.setAttribute('aria-pressed','true');
+      $('customBox').hidden=(p.code!=='custom');
+      $('startBtn').disabled=false;
+      $('startBtn').textContent=(p.code==='custom')?'執行':'啟動';
+      updateCombo();
+    });
+    box.appendChild(b);
+  });
+}
+function renderSteps(){
+  var box=$('steps'); box.innerHTML='';
+  STEPS.forEach(function(s){
+    var b=document.createElement('button');
+    b.type='button'; b.className='chip'; b.setAttribute('aria-pressed',picked[s.code]?'true':'false');
+    var zh=(s.ozoneZh&&machine&&machine.ozone)?s.ozoneZh:s.zh;
+    b.innerHTML=zh+'<span class="code">'+s.code+'</span>';
+    b.addEventListener('click',function(){
+      if(picked[s.code]){delete picked[s.code];b.setAttribute('aria-pressed','false');}
+      else{picked[s.code]=true;b.setAttribute('aria-pressed','true');}
+      updateCombo();
+    });
+    box.appendChild(b);
+  });
+}
+$('optAddDry').addEventListener('change',updateCombo);
+$('optDryTemp').addEventListener('change',updateCombo);
+
+// 關鍵：一律依 STEPS 的 order 排序，不依點選先後
+function buildCombo(){
+  return STEPS.filter(function(s){return picked[s.code];})
+              .sort(function(a,b){return a.order-b.order;})
+              .map(function(s){return s.code;}).join('_');
+}
+function updateCombo(){
+  var el=$('combo'); if(!el||$('customBox').hidden){return;}
+  var combo=buildCombo();
+  if(!combo){el.innerHTML='<span class="empty">尚未勾選任何步驟</span>';return;}
+  var addDry=$('optAddDry').checked;
+  var willSendTemp=picked['dry']||addDry;
+  var html='custom_program_combo = "'+combo+'"　('+combo.length+' 字元 / 上限 100)';
+  html+='<br>custom_adddry_enabled = "'+(addDry?'true':'false')+'"';
+  if(willSendTemp){
+    html+='<br>custom_dry_temp_enabled = "'+($('optDryTemp').checked?'true':'false')+'"';
+  }else{
+    html+='<br><span class="om">custom_dry_temp_enabled 不送出（沒跑烘乾也沒加烘）— 不可送 false</span>';
+  }
+  el.innerHTML=html;
+}
+
+// ── 啟動 ─────────────────────────────────────────────────
+$('apiOk').addEventListener('click',function(){apiOk=true;this.setAttribute('aria-pressed','true');$('apiFail').setAttribute('aria-pressed','false');});
+$('apiFail').addEventListener('click',function(){apiOk=false;this.setAttribute('aria-pressed','true');$('apiOk').setAttribute('aria-pressed','false');});
+
+$('startBtn').addEventListener('click',function(){
+  if(!machine||!program){return;}
+
+  if(machine.type==='HCD'){
+    blockEvent('program_start','烘乾機（HCD）的遠端啟動本次不收（2026-09-10 決議）');
+    closeModal(true); return;
+  }
+  if(!apiOk){
+    blockEvent('program_start','後端回應失敗 → 不送出（觸發時機＝啟動成功後）');
+    return;
+  }
+
+  var combo=buildCombo();
+  if(program.code==='custom'&&!combo){
+    blockEvent('custom_program_start','沒有勾選任何步驟，送不出去，也不產生事件');
+    return;
+  }
+
+  // EV-001
+  sendEvent('program_start',{
+    program_type:program.code,
+    store_id:store.id,
+    store_alias:store.alias,
+    machine_id:machine.id,
+    machine_has_ozone:machine.ozone?'true':'false'
+  }, program.code==='custom'?'選 custom 時 EV-001 與 EV-002 必須成對出現':null);
+
+  // EV-002
+  if(program.code==='custom'){
+    var addDry=$('optAddDry').checked;
+    var p={
+      custom_program_combo:combo,
+      custom_adddry_enabled:addDry?'true':'false'
+    };
+    var note=null;
+    if(picked['dry']||addDry){
+      p.custom_dry_temp_enabled=$('optDryTemp').checked?'true':'false';
+      if(!picked['dry']&&addDry){note='沒跑烘乾但有加烘 → 依 PM 決議仍送出 custom_dry_temp_enabled';}
+    }else{
+      note='沒跑烘乾也沒加烘 → custom_dry_temp_enabled 整個不送（不可送 false）';
+    }
+    p.store_id=store.id; p.store_alias=store.alias;
+    p.machine_id=machine.id; p.machine_has_ozone=machine.ozone?'true':'false';
+    sendEvent('custom_program_start',p,note);
+  }
+
+  closeModal(true);
+});
+</script>
+</body>
+</html>
